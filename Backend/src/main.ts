@@ -33,21 +33,28 @@ async function bootstrap() {
 
   // CORS Configuration
   const allowedOrigins = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',')
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
     : ['http://localhost:5173', 'http://localhost:3000'];
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        allowedOrigins.includes('*') ||
+        origin.endsWith('.vercel.app') ||
+        process.env.NODE_ENV !== 'production'
+      ) {
         callback(null, true);
       } else {
-        callback(new Error('CORS access denied by policy'));
+        callback(new Error(`CORS access denied by policy for origin: ${origin}`));
       }
     },
     credentials: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders: 'Content-Type,Accept,Authorization,X-Branch-ID',
   });
+
 
   // Swagger OpenAPI 3.0 Documentation Setup
   const config = new DocumentBuilder()
@@ -306,8 +313,8 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, document, swaggerCustomOptions);
 
 
-  await app.listen(port);
-  logger.log(`🚀 EduHMS API running on: http://localhost:${port}/${apiPrefix}`);
+  await app.listen(port, '0.0.0.0');
+  logger.log(`🚀 EduHMS API running on: http://0.0.0.0:${port}/${apiPrefix}`);
   logger.log(`📖 Swagger API Docs available at: http://localhost:${port}/api/docs`);
 }
 
