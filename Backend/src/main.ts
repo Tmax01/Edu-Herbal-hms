@@ -13,7 +13,10 @@ async function bootstrap() {
   const apiPrefix = process.env.API_PREFIX || 'api/v1';
 
   // Global Route Prefix
-  app.setGlobalPrefix(apiPrefix);
+  app.setGlobalPrefix(apiPrefix, {
+    exclude: ['/', 'health'],
+  });
+
 
   // Global Validation Pipe with automatic DTO stripping and transformation
   app.useGlobalPipes(
