@@ -1,0 +1,10 @@
+{
+  "description": "Manage hospital operations efficiently with role-based access for admins and CTOs to oversee staff credentials, permissions, and system-wide controls.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -1,0 +1,939 @@
+{
+  "info": {
+    "_postman_id": "eduhms-enterprise-collection-2026",
+    "name": "EduHMS Enterprise Healthcare API",
+    "description": "Complete Postman testing suite for EduHMS (Hospital Management System & EMR). Includes Auth with automated token capture, Clinical EMR, CDSS Drug Safety, LIS Laboratory, FEFO Pharmacy, Inpatient Wards, Billing, Accounting, HR, Call Centre, Meetings, Daily Reports, Staff Chat, OpenAI Copilot, and Arkesel SMS.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "branchId",
+      "value": "accra-main-branch-001",
+      "type": "string"
+    },
+    {
+      "key": "patientId",
+      "value": "PAT-001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01. Health & System",
+      "item": [
+        {
+          "name": "System Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02. Auth & RBAC",
+      "item": [
+        {
+          "name": "Login as Lead Doctor (Dr. Kwame Mensah)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.data && jsonData.data.tokens) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.tokens.refreshToken);",
+                  "    console.log('✅ Access Token automatically set to collection variables');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dr.mensah@eduhms.gh\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login as CTO (Alex Vance)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.data && jsonData.data.tokens) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.tokens.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cto@eduhms.gh\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login as Pharmacist (Ama Serwaa)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"pharmacist@eduhms.gh\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login using Staff ID (EMP-DOC-003)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData && jsonData.data && jsonData.data.tokens) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.tokens.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"EMP-DOC-003\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Rotate Refresh Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03. Branches & Departments",
+      "item": [
+        {
+          "name": "List All Branches",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["branches"]
+            }
+          }
+        },
+        {
+          "name": "Get Single Branch",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/branches/accra-main-branch-001",
+              "host": ["{{baseUrl}}"],
+              "path": ["branches", "accra-main-branch-001"]
+            }
+          }
+        },
+        {
+          "name": "Create Branch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Kumasi Specialty Hospital\",\n  \"code\": \"KMS\",\n  \"address\": \"Adum Commercial Area, Kumasi\",\n  \"phone\": \"+233 24 300 0003\",\n  \"email\": \"kumasi@eduhms.gh\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/branches",
+              "host": ["{{baseUrl}}"],
+              "path": ["branches"]
+            }
+          }
+        },
+        {
+          "name": "List Departments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/departments?branchId={{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["departments"],
+              "query": [
+                { "key": "branchId", "value": "{{branchId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04. Patient Registry & Demographics",
+      "item": [
+        {
+          "name": "Register Patient with Emergency Contacts & Allergies",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Adjoa Mensah\",\n  \"dateOfBirth\": \"1992-05-18\",\n  \"gender\": \"Female\",\n  \"phone\": \"+233245551234\",\n  \"email\": \"adjoa.mensah@gmail.com\",\n  \"address\": \"House 45, Ring Road Central, Accra\",\n  \"bloodGroup\": \"O+\",\n  \"nhisId\": \"NHIS-GH-8839201\",\n  \"registrationBranchId\": \"{{branchId}}\",\n  \"emergencyContacts\": [\n    {\n      \"contactName\": \"Kofi Mensah\",\n      \"relationship\": \"Spouse\",\n      \"phone\": \"+233249998888\"\n    }\n  ],\n  \"allergies\": [\n    {\n      \"allergenName\": \"Penicillin\",\n      \"severity\": \"Severe\",\n      \"reaction\": \"Facial swelling and hives\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patients",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients"]
+            }
+          }
+        },
+        {
+          "name": "Search Patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/patients?search=Adjoa",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients"],
+              "query": [
+                { "key": "search", "value": "Adjoa" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Profile (EMR History)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/patients/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "{{patientId}}"]
+            }
+          }
+        },
+        {
+          "name": "Add Patient Allergy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"allergenName\": \"Sulfa Drugs\",\n  \"severity\": \"Moderate\",\n  \"reaction\": \"Skin rash\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patients/{{patientId}}/allergies",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "{{patientId}}", "allergies"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05. Triage & Vitals",
+      "item": [
+        {
+          "name": "Record Triage Vitals (Alerts & BMI)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"bpSystolic\": 145,\n  \"bpDiastolic\": 95,\n  \"pulseRate\": 104,\n  \"temperature\": 38.7,\n  \"bloodSugar\": 6.2,\n  \"weightKg\": 74.0,\n  \"heightCm\": 168.0,\n  \"spo2\": 97\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/vitals",
+              "host": ["{{baseUrl}}"],
+              "path": ["vitals"]
+            }
+          }
+        },
+        {
+          "name": "Get Patient Vitals History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vitals/patient/{{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["vitals", "patient", "{{patientId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06. Appointments & Waiting Queue",
+      "item": [
+        {
+          "name": "Schedule Outpatient Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"doctorId\": \"USR-003\",\n  \"departmentId\": \"dept-gen-med-001\",\n  \"branchId\": \"{{branchId}}\",\n  \"appointmentDate\": \"2026-09-02\",\n  \"appointmentTime\": \"09:30:00\",\n  \"notes\": \"Follow-up chronic headache and recurring fever\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments"]
+            }
+          }
+        },
+        {
+          "name": "Get Today's Active Triage Queue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/queue/today?branchId={{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "queue", "today"],
+              "query": [
+                { "key": "branchId", "value": "{{branchId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reception Check-In",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/APT-001/check-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "APT-001", "check-in"]
+            }
+          }
+        },
+        {
+          "name": "Update Appointment Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/APT-001/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "APT-001", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07. Clinical EMR & Consultations",
+      "item": [
+        {
+          "name": "Record Doctor SOAP Encounter",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"consultationType\": \"Conventional\",\n  \"chiefComplaint\": \"Severe frontal headache and high fever for 3 days\",\n  \"historyPresentingIllness\": \"Fever spiking in evenings with joint pain and chills\",\n  \"physicalExamination\": \"Alert, febrile 38.7C, throat clear, chest clear, abdomen soft\",\n  \"primaryDiagnosis\": \"Uncomplicated Plasmodium Falciparum Malaria\",\n  \"treatmentPlan\": \"Prescribe Artemether-Lumefantrine and Paracetamol. Order Malaria RDT.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/consultations",
+              "host": ["{{baseUrl}}"],
+              "path": ["consultations"]
+            }
+          }
+        },
+        {
+          "name": "Query Consultations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/consultations?patientId={{patientId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["consultations"],
+              "query": [
+                { "key": "patientId", "value": "{{patientId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08. Pharmacy & Drug Safety",
+      "item": [
+        {
+          "name": "CDSS Drug-Drug Interaction Check",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"drugNames\": [\"Aspirin\", \"Warfarin\", \"Ciprofloxacin\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pharmacy/cdss/check-interactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacy", "cdss", "check-interactions"]
+            }
+          }
+        },
+        {
+          "name": "Create Prescription",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"prescriptionType\": \"Conventional\",\n  \"items\": [\n    {\n      \"drugName\": \"Paracetamol 500mg\",\n      \"dosage\": \"1g\",\n      \"frequency\": \"Three times daily\",\n      \"duration\": \"3 days\",\n      \"quantityPrescribed\": 18\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pharmacy/prescriptions",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacy", "prescriptions"]
+            }
+          }
+        },
+        {
+          "name": "Dispense Prescription (FEFO Inventory Deduction)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dispensedItems\": [\n    {\n      \"prescriptionItemId\": \"ITEM-UUID-HERE\",\n      \"quantityToDispense\": 18\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pharmacy/prescriptions/RX-2026-001/dispense",
+              "host": ["{{baseUrl}}"],
+              "path": ["pharmacy", "prescriptions", "RX-2026-001", "dispense"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09. Laboratory (LIS)",
+      "item": [
+        {
+          "name": "Create Lab Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"priority\": \"Urgent\",\n  \"items\": [\n    {\n      \"testName\": \"Full Blood Count (FBC)\",\n      \"referenceRange\": \"12.0 - 16.0 g/dL\",\n      \"unit\": \"g/dL\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/laboratory/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["laboratory", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Submit Multi-Parameter Results",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resultSummary\": \"FBC shows mild leukocytosis consistent with infection.\",\n  \"results\": [\n    {\n      \"itemId\": \"LAB-ITEM-UUID\",\n      \"parameterResults\": {\n        \"hemoglobin\": 13.8,\n        \"wbc\": 11200,\n        \"platelets\": 240000\n      },\n      \"flag\": \"High\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/laboratory/orders/LAB-2026-001/results",
+              "host": ["{{baseUrl}}"],
+              "path": ["laboratory", "orders", "LAB-2026-001", "results"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Inpatient Wards & Nursing",
+      "item": [
+        {
+          "name": "Query Wards & Occupancy Rates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/wards?branchId={{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["wards"],
+              "query": [
+                { "key": "branchId", "value": "{{branchId}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Admit Patient to Bed",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"bedId\": \"BED-001\",\n  \"branchId\": \"{{branchId}}\",\n  \"admissionDiagnosis\": \"Severe Malaria with high fever and dehydration\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wards/admissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["wards", "admissions"]
+            }
+          }
+        },
+        {
+          "name": "Record Nursing Care & Charting Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"bedId\": \"BED-001\",\n  \"noteType\": \"Medication\",\n  \"vitalsBp\": \"120/80\",\n  \"vitalsPulse\": \"78 bpm\",\n  \"vitalsTemp\": \"36.8 C\",\n  \"vitalsSpo2\": \"99%\",\n  \"clinicalNote\": \"Administered IV Artesunate 120mg as prescribed. Patient resting comfortably.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/nursing/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["nursing", "notes"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Billing & Financial Operations",
+      "item": [
+        {
+          "name": "Generate Itemized Patient Invoice",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"paymentMethod\": \"Mobile Money\",\n  \"lineItems\": [\n    {\n      \"itemType\": \"Consultation\",\n      \"description\": \"Outpatient General Medicine Consultation\",\n      \"quantity\": 1,\n      \"unitPrice\": 150.00\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/billing/invoices",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "invoices"]
+            }
+          }
+        },
+        {
+          "name": "Record Payment & Issue Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": \"INV-2026-0001\",\n  \"amountPaid\": 150.00,\n  \"paymentMethod\": \"Mobile Money\",\n  \"transactionReference\": \"MOMO-GH-9988231\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/billing/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "payments"]
+            }
+          }
+        },
+        {
+          "name": "Executive Financial Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/accounting/overview?branchId={{branchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["accounting", "overview"],
+              "query": [
+                { "key": "branchId", "value": "{{branchId}}" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Human Resources & Rostering",
+      "item": [
+        {
+          "name": "Submit Leave Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"branchId\": \"{{branchId}}\",\n  \"leaveType\": \"Annual Leave\",\n  \"fromDate\": \"2026-10-01\",\n  \"toDate\": \"2026-10-14\",\n  \"days\": 10,\n  \"reason\": \"Annual leave for rest & travel\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hr/leave-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["hr", "leave-requests"]
+            }
+          }
+        },
+        {
+          "name": "Submit Off-Duty Shift Swap Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departmentId\": \"dept-gen-med-001\",\n  \"branchId\": \"{{branchId}}\",\n  \"requestDate\": \"2026-09-15\",\n  \"shiftType\": \"Night Shift\",\n  \"reason\": \"Swap shift with Nurse Mensah\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/hr/off-duty-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["hr", "off-duty-requests"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "13. Call Centre & CRM",
+      "item": [
+        {
+          "name": "Log Patient Call",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"patientName\": \"Adjoa Mensah\",\n  \"branchId\": \"{{branchId}}\",\n  \"reason\": \"Lab report readiness inquiry\",\n  \"notes\": \"Patient informed that FBC test is signed off by physician.\",\n  \"outcome\": \"Resolved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/call-centre/logs",
+              "host": ["{{baseUrl}}"],
+              "path": ["call-centre", "logs"]
+            }
+          }
+        },
+        {
+          "name": "Schedule Clinical Follow-Up",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"branchId\": \"{{branchId}}\",\n  \"condition\": \"Malaria recovery review\",\n  \"dueDate\": \"2026-09-15\",\n  \"lastVisit\": \"2026-09-02\",\n  \"status\": \"Due\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/call-centre/follow-ups",
+              "host": ["{{baseUrl}}"],
+              "path": ["call-centre", "follow-ups"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "14. Meetings & Scheduling",
+      "item": [
+        {
+          "name": "Schedule Clinical Mortality Audit",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Clinical Mortality & Morbidity Audit\",\n  \"type\": \"Clinical\",\n  \"scope\": \"Facility\",\n  \"targetBranchId\": \"{{branchId}}\",\n  \"meetingDate\": \"2026-09-08\",\n  \"meetingTime\": \"08:00 AM\",\n  \"duration\": \"90 mins\",\n  \"location\": \"Main Auditorium B\",\n  \"agenda\": \"1. ICU mortality cases\\n2. Sepsis protocol review\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/meetings",
+              "host": ["{{baseUrl}}"],
+              "path": ["meetings"]
+            }
+          }
+        },
+        {
+          "name": "Query Scheduled Meetings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/meetings",
+              "host": ["{{baseUrl}}"],
+              "path": ["meetings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "15. Daily Reports & Census",
+      "item": [
+        {
+          "name": "Submit Daily Departmental Activity Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departmentId\": \"dept-gen-med-001\",\n  \"branchId\": \"{{branchId}}\",\n  \"reportDate\": \"2026-09-02\",\n  \"activities\": \"Handled 42 outpatient consultations and 6 minor wound dressings.\",\n  \"patientsHandled\": 42,\n  \"challenges\": \"None reported\",\n  \"recommendations\": \"None\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/daily-reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["daily-reports"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "16. Staff Real-Time Chat",
+      "item": [
+        {
+          "name": "Create Chat Channel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"icu-handover-channel\",\n  \"description\": \"Real-time handover and vital alerts for ICU ward\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/channels",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "channels"]
+            }
+          }
+        },
+        {
+          "name": "Send Message to Channel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"channelId\": \"CHAN-2026-001\",\n  \"content\": \"Patient in Bed 4 vitals stabilized following IV Artesunate administration.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/chat/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["chat", "messages"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "17. AI Clinical Copilot",
+      "item": [
+        {
+          "name": "Differential Diagnosis Copilot",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"chiefComplaintAndHpi\": \"High fever 39.2C, severe joint pain, frontal headache, and vomiting for 3 days\",\n  \"vitalsSummary\": \"BP: 130/85, Pulse: 104 bpm, Temp: 39.2 C, SpO2: 97%\",\n  \"patientDemographics\": \"Adult female, 32 years old\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai-assistant/differential-diagnosis",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai-assistant", "differential-diagnosis"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "18. SMS & Communication",
+      "item": [
+        {
+          "name": "Send Patient SMS via Arkesel",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipientPhone\": \"0245551234\",\n  \"message\": \"Dear Adjoa, your EduHMS appointment is confirmed for tomorrow at 09:30 AM.\",\n  \"purpose\": \"Appointment Reminder\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sms/send",
+              "host": ["{{baseUrl}}"],
+              "path": ["sms", "send"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. CORE INFRASTRUCTURE
+// ==========================================
+
+model Branch {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  address   String
+  phone     String
+  email     String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  departments          Department[]
+  users                User[]
+  patients             Patient[]
+  appointments         Appointment[]
+  consultations        Consultation[]
+  prescriptions        Prescription[]
+  labOrders            LabOrder[]
+  wards                Ward[]
+  wardBeds             WardBed[]
+  admissions           Admission[]
+  stockItems           StockItem[]
+  stockTransactions    StockTransaction[]
+  suppliers            Supplier[]
+  invoices             Invoice[]
+  payments             Payment[]
+  expenses             Expense[]
+  payrollRecords       PayrollRecord[]
+  leaveRequests        LeaveRequest[]
+  offDutyRequests      OffDutyRequest[]
+  callLogs             CallLog[]
+  patientFollowUps     PatientFollowUp[]
+  targetMeetings       Meeting[]            @relation("MeetingTargetBranch")
+  telemedicineSessions TelemedicineSession[]
+  dailyReports         DailyReport[]
+  announcements        InternalAnnouncement[]
+
+  @@index([code], name: "idx_branches_code")
+  @@map("branches")
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  branchId    String?  @map("branch_id")
+  name        String
+  code        String
+  description String?
+  isClinical  Boolean  @default(true) @map("is_clinical")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  branch          Branch?          @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  users           User[]
+  appointments    Appointment[]
+  offDutyRequests OffDutyRequest[]
+  dailyReports    DailyReport[]
+
+  @@index([branchId], name: "idx_departments_branch_id")
+  @@map("departments")
+}
+
+// ==========================================
+// 2. AUTHENTICATION, USERS & RBAC
+// ==========================================
+
+model User {
+  id              String    @id
+  staffNumber     String    @unique @map("staff_number")
+  email           String    @unique
+  passwordHash    String    @map("password_hash")
+  fullName        String    @map("full_name")
+  role            String
+  primaryBranchId String?   @map("primary_branch_id")
+  departmentId    String?   @map("department_id")
+  phone           String?
+  isActive        Boolean   @default(true) @map("is_active")
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  primaryBranch          Branch?                @relation(fields: [primaryBranchId], references: [id], onDelete: SetNull)
+  department             Department?            @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  modulePermissions      UserModulePermission[] @relation("UserPermissions")
+  grantedPermissions     UserModulePermission[] @relation("GrantedPermissions")
+  sessions               UserSession[]
+  auditLogs              AuditLog[]
+  registeredPatients     Patient[]              @relation("RegisteredByStaff")
+  recordedAllergies      PatientAllergy[]
+  recordedVitals         PatientVitals[]
+  doctorAppointments     Appointment[]          @relation("DoctorAppointments")
+  createdAppointments    Appointment[]          @relation("CreatedAppointments")
+  doctorConsultations    Consultation[]         @relation("DoctorConsultations")
+  prescribedOrders       Prescription[]         @relation("PrescribedDoctor")
+  dispensedOrders        Prescription[]         @relation("DispensedPharmacist")
+  doctorLabOrders        LabOrder[]             @relation("DoctorLabOrders")
+  techLabOrders          LabOrder[]             @relation("TechLabOrders")
+  approvedLabOrders      LabOrder[]             @relation("ApprovedLabDoctor")
+  uploadedLabAttachments LabAttachment[]
+  admittedPatients       Admission[]            @relation("AdmittingDoctor")
+  nursingNotes           NursingNote[]
+  stockTransactions      StockTransaction[]
+  approvedProductionQC   ProductionBatch[]      @relation("QCApproverDoctor")
+  billedInvoices         Invoice[]              @relation("BilledByStaff")
+  receivedPayments       Payment[]              @relation("ReceivedByCashier")
+  approvedExpenses       Expense[]              @relation("ApprovedByOfficer")
+  payrollRecords         PayrollRecord[]        @relation("StaffPayroll")
+  processedPayrolls      PayrollRecord[]        @relation("ProcessedByAccountant")
+  leaveRequests          LeaveRequest[]         @relation("StaffLeave")
+  approvedLeaves         LeaveRequest[]         @relation("ApprovedBySupervisor")
+  offDutyRequests        OffDutyRequest[]       @relation("StaffOffDuty")
+  approvedOffDuties      OffDutyRequest[]       @relation("ApprovedOffDutySupervisor")
+  handledCalls           CallLog[]
+  doctorFollowUps        PatientFollowUp[]
+  organizedMeetings      Meeting[]
+  chatMessages           ChatMessage[]
+  telemedicineDoctor     TelemedicineSession[]  @relation("DoctorTelemed")
+  dailyReports           DailyReport[]          @relation("StaffDailyReport")
+  reviewedReports        DailyReport[]          @relation("ReviewedDailyReport")
+  aiChatSessions         AiChatSession[]
+  sentSmsLogs            SmsNotificationLog[]
+  announcementsCreated   InternalAnnouncement[] @relation("CreatedAnnouncements")
+
+  @@index([email], name: "idx_users_email")
+  @@index([role], name: "idx_users_role")
+  @@index([primaryBranchId], name: "idx_users_branch")
+  @@map("users")
+}
+
+model UserModulePermission {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  moduleKey String   @map("module_key")
+  canView   Boolean  @default(true) @map("can_view")
+  canCreate Boolean  @default(false) @map("can_create")
+  canEdit   Boolean  @default(false) @map("can_edit")
+  canDelete Boolean  @default(false) @map("can_delete")
+  grantedBy String?  @map("granted_by")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  user        User  @relation("UserPermissions", fields: [userId], references: [id], onDelete: Cascade)
+  grantorUser User? @relation("GrantedPermissions", fields: [grantedBy], references: [id], onDelete: SetNull)
+
+  @@unique([userId, moduleKey])
+  @@index([userId, moduleKey], name: "idx_perm_user_mod")
+  @@map("user_module_permissions")
+}
+
+model UserSession {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  refreshTokenHash String   @map("refresh_token_hash")
+  ipAddress        String   @map("ip_address")
+  userAgent        String?  @map("user_agent")
+  isRevoked        Boolean  @default(false) @map("is_revoked")
+  expiresAt        DateTime @map("expires_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+// ==========================================
+// 3. AUDIT LOGGING & HIPAA COMPLIANCE
+// ==========================================
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?  @map("actor_id")
+  moduleName String   @map("module_name")
+  actionType String   @map("action_type")
+  ipAddress  String   @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  diffState  Json?    @map("diff_state")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  actorUser User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId], name: "idx_audit_actor")
+  @@index([createdAt(sort: Desc)], name: "idx_audit_created")
+  @@map("audit_logs")
+}
+
+// ==========================================
+// 4. PATIENT REGISTRY & DEMOGRAPHICS
+// ==========================================
+
+model Patient {
+  id                   String   @id
+  mrn                  String   @unique
+  fullName             String   @map("full_name")
+  dateOfBirth          DateTime @map("date_of_birth") @db.Date
+  gender               String
+  phone                String
+  email                String?
+  address              String
+  bloodGroup           String?  @map("blood_group")
+  nhisId               String?  @map("nhis_id")
+  registrationBranchId String   @map("registration_branch_id")
+  registeredDate       DateTime @default(now()) @map("registered_date")
+  registeredBy         String   @map("registered_by")
+  photoUrl             String?  @map("photo_url")
+  generalNotes         String?  @map("general_notes")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  registrationBranch   Branch                   @relation(fields: [registrationBranchId], references: [id])
+  registeredByUser     User                     @relation("RegisteredByStaff", fields: [registeredBy], references: [id])
+  emergencyContacts    PatientEmergencyContact[]
+  allergies            PatientAllergy[]
+  vitals               PatientVitals[]
+  appointments         Appointment[]
+  consultations        Consultation[]
+  prescriptions        Prescription[]
+  labOrders            LabOrder[]
+  admissions           Admission[]
+  nursingNotes         NursingNote[]
+  invoices             Invoice[]
+  payments             Payment[]
+  callLogs             CallLog[]
+  followUps            PatientFollowUp[]
+  telemedicineSessions TelemedicineSession[]
+  smsLogs              SmsNotificationLog[]
+
+  @@index([mrn], name: "idx_patients_mrn")
+  @@index([phone], name: "idx_patients_phone")
+  @@index([nhisId], name: "idx_patients_nhis")
+  @@index([registrationBranchId], name: "idx_patients_branch")
+  @@map("patients")
+}
+
+model PatientEmergencyContact {
+  id           String  @id @default(uuid())
+  patientId    String  @map("patient_id")
+  contactName  String  @map("contact_name")
+  relationship String
+  phone        String
+  isPrimary    Boolean @default(true) @map("is_primary")
+
+  // Relations
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@map("patient_emergency_contacts")
+}
+
+model PatientAllergy {
+  id           String   @id @default(uuid())
+  patientId    String   @map("patient_id")
+  allergenName String   @map("allergen_name")
+  severity     String   @default("Moderate")
+  reaction     String?
+  recordedBy   String   @map("recorded_by")
+  recordedAt   DateTime @default(now()) @map("recorded_at")
+
+  // Relations
+  patient        Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  recordedByUser User    @relation(fields: [recordedBy], references: [id])
+
+  @@map("patient_allergies")
+}
+
+// ==========================================
+// 5. TRIAGE & VITALS
+// ==========================================
+
+model PatientVitals {
+  id             String   @id @default(uuid())
+  patientId      String   @map("patient_id")
+  consultationId String?  @map("consultation_id")
+  bpSystolic     Int?     @map("bp_systolic")
+  bpDiastolic    Int?     @map("bp_diastolic")
+  pulseRate      Int?     @map("pulse_rate")
+  temperature    Decimal? @db.Decimal(4, 1)
+  bloodSugar     Decimal? @map("blood_sugar") @db.Decimal(5, 1)
+  weightKg       Decimal? @map("weight_kg") @db.Decimal(5, 2)
+  heightCm       Decimal? @map("height_cm") @db.Decimal(5, 1)
+  spo2           Int?
+  recordedBy     String   @map("recorded_by")
+  recordedAt     DateTime @default(now()) @map("recorded_at")
+
+  // Relations
+  patient        Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  consultation   Consultation? @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  recordedByUser User          @relation(fields: [recordedBy], references: [id])
+
+  @@index([patientId], name: "idx_vitals_patient")
+  @@index([recordedAt(sort: Desc)], name: "idx_vitals_recorded")
+  @@map("patient_vitals")
+}
+
+// ==========================================
+// 6. OUTPATIENT & APPOINTMENTS
+// ==========================================
+
+model Appointment {
+  id              String    @id
+  patientId       String    @map("patient_id")
+  doctorId        String    @map("doctor_id")
+  departmentId    String    @map("department_id")
+  branchId        String    @map("branch_id")
+  appointmentDate DateTime  @map("appointment_date") @db.Date
+  appointmentTime String    @map("appointment_time")
+  status          String    @default("Scheduled")
+  notes           String?
+  checkedInAt     DateTime? @map("checked_in_at")
+  completedAt     DateTime? @map("completed_at")
+  createdBy       String    @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  patient       Patient        @relation(fields: [patientId], references: [id])
+  doctor        User           @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  department    Department     @relation(fields: [departmentId], references: [id])
+  branch        Branch         @relation(fields: [branchId], references: [id])
+  createdByUser User           @relation("CreatedAppointments", fields: [createdBy], references: [id])
+  consultations Consultation[]
+
+  @@index([appointmentDate, branchId], name: "idx_appt_date_branch")
+  @@index([doctorId, appointmentDate], name: "idx_appt_doctor_date")
+  @@index([patientId], name: "idx_appt_patient")
+  @@map("appointments")
+}
+
+// ==========================================
+// 7. CLINICAL EMR & CONSULTATIONS
+// ==========================================
+
+model Consultation {
+  id                       String   @id @default(uuid())
+  appointmentId            String?  @map("appointment_id")
+  patientId                String   @map("patient_id")
+  doctorId                 String   @map("doctor_id")
+  branchId                 String   @map("branch_id")
+  consultationType         String   @default("Conventional") @map("consultation_type")
+  chiefComplaint           String   @map("chief_complaint")
+  historyPresentingIllness String?  @map("history_presenting_illness")
+  physicalExamination      String?  @map("physical_examination")
+  primaryDiagnosis         String   @map("primary_diagnosis")
+  secondaryDiagnosis       String?  @map("secondary_diagnosis")
+  treatmentPlan            String   @map("treatment_plan")
+  doctorNotes              String?  @map("doctor_notes")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  appointment   Appointment?    @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  patient       Patient         @relation(fields: [patientId], references: [id])
+  doctor        User            @relation("DoctorConsultations", fields: [doctorId], references: [id])
+  branch        Branch          @relation(fields: [branchId], references: [id])
+  vitals        PatientVitals[]
+  prescriptions Prescription[]
+  labOrders     LabOrder[]
+  invoices      Invoice[]
+
+  @@index([patientId], name: "idx_consult_patient")
+  @@index([doctorId], name: "idx_consult_doctor")
+  @@index([createdAt(sort: Desc)], name: "idx_consult_created")
+  @@map("consultations")
+}
+
+model Prescription {
+  id               String    @id
+  consultationId   String?   @map("consultation_id")
+  patientId        String    @map("patient_id")
+  doctorId         String    @map("doctor_id")
+  branchId         String    @map("branch_id")
+  prescriptionType String    @default("Conventional") @map("prescription_type")
+  status           String    @default("Pending")
+  dispensedBy      String?   @map("dispensed_by")
+  dispensedAt      DateTime? @map("dispensed_at")
+  notes            String?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  consultation      Consultation?      @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  patient           Patient            @relation(fields: [patientId], references: [id])
+  doctor            User               @relation("PrescribedDoctor", fields: [doctorId], references: [id])
+  branch            Branch             @relation(fields: [branchId], references: [id])
+  dispensedByUser   User?              @relation("DispensedPharmacist", fields: [dispensedBy], references: [id], onDelete: SetNull)
+  items             PrescriptionItem[]
+
+  @@index([patientId], name: "idx_prescriptions_patient")
+  @@index([status], name: "idx_prescriptions_status")
+  @@index([branchId], name: "idx_prescriptions_branch")
+  @@map("prescriptions")
+}
+
+model PrescriptionItem {
+  id                 String  @id @default(uuid())
+  prescriptionId     String  @map("prescription_id")
+  stockItemId        String? @map("stock_item_id")
+  drugName           String  @map("drug_name")
+  dosage             String
+  frequency          String
+  duration           String
+  quantityPrescribed Int     @map("quantity_prescribed")
+  quantityDispensed  Int     @default(0) @map("quantity_dispensed")
+  itemStatus         String  @default("Pending") @map("item_status")
+
+  // Relations
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  stockItem    StockItem?   @relation(fields: [stockItemId], references: [id], onDelete: SetNull)
+
+  @@map("prescription_items")
+}
+
+model DrugInteractionsCatalog {
+  id               String  @id @default(uuid())
+  drugA            String  @map("drug_a")
+  drugB            String  @map("drug_b")
+  severity         String
+  warningMessage   String  @map("warning_message")
+  clinicalGuidance String? @map("clinical_guidance")
+
+  @@map("drug_interactions_catalog")
+}
+
+// ==========================================
+// 8. LABORATORY (LIS)
+// ==========================================
+
+model LabOrder {
+  id                 String    @id
+  consultationId     String?   @map("consultation_id")
+  patientId          String    @map("patient_id")
+  doctorId           String    @map("doctor_id")
+  branchId           String    @map("branch_id")
+  priority           String    @default("Routine")
+  status             String    @default("Pending")
+  resultSummary      String?   @map("result_summary")
+  technicianId       String?   @map("technician_id")
+  approvedByDoctorId String?   @map("approved_by_doctor_id")
+  approvedAt         DateTime? @map("approved_at")
+  orderedAt          DateTime  @default(now()) @map("ordered_at")
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  consultation         Consultation?    @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  patient              Patient          @relation(fields: [patientId], references: [id])
+  doctor               User             @relation("DoctorLabOrders", fields: [doctorId], references: [id])
+  branch               Branch           @relation(fields: [branchId], references: [id])
+  technicianUser       User?            @relation("TechLabOrders", fields: [technicianId], references: [id], onDelete: SetNull)
+  approvedByDoctorUser User?            @relation("ApprovedLabDoctor", fields: [approvedByDoctorId], references: [id], onDelete: SetNull)
+  items                LabOrderItem[]
+  attachments          LabAttachment[]
+
+  @@index([patientId], name: "idx_lab_orders_patient")
+  @@index([status], name: "idx_lab_orders_status")
+  @@index([branchId], name: "idx_lab_orders_branch")
+  @@map("lab_orders")
+}
+
+model LabOrderItem {
+  id               String  @id @default(uuid())
+  labOrderId       String  @map("lab_order_id")
+  testName         String  @map("test_name")
+  parameterResults Json?   @map("parameter_results")
+  referenceRange   String? @map("reference_range")
+  unit             String?
+  flag             String  @default("Normal")
+
+  // Relations
+  labOrder LabOrder @relation(fields: [labOrderId], references: [id], onDelete: Cascade)
+
+  @@map("lab_order_items")
+}
+
+model LabAttachment {
+  id          String   @id @default(uuid())
+  labOrderId  String   @map("lab_order_id")
+  fileName    String   @map("file_name")
+  filePathUrl String   @map("file_path_url")
+  fileSizeKb  Int      @map("file_size_kb")
+  uploadedBy  String   @map("uploaded_by")
+  uploadedAt  DateTime @default(now()) @map("uploaded_at")
+
+  // Relations
+  labOrder       LabOrder @relation(fields: [labOrderId], references: [id], onDelete: Cascade)
+  uploadedByUser User     @relation(fields: [uploadedBy], references: [id])
+
+  @@map("lab_attachments")
+}
+
+// ==========================================
+// 9. INPATIENT WARDS & ADMISSIONS
+// ==========================================
+
+model Ward {
+  id               String  @id @default(uuid())
+  branchId         String  @map("branch_id")
+  name             String
+  genderAllocation String  @default("Mixed") @map("gender_allocation")
+  totalBeds        Int     @map("total_beds")
+  isActive         Boolean @default(true) @map("is_active")
+
+  // Relations
+  branch   Branch    @relation(fields: [branchId], references: [id])
+  wardBeds WardBed[]
+
+  @@map("wards")
+}
+
+model WardBed {
+  id         String @id
+  wardId     String @map("ward_id")
+  branchId   String @map("branch_id")
+  bedNumber  String @map("bed_number")
+  status     String @default("Available")
+
+  // Relations
+  ward         Ward          @relation(fields: [wardId], references: [id])
+  branch       Branch        @relation(fields: [branchId], references: [id])
+  admissions   Admission[]
+  nursingNotes NursingNote[]
+
+  @@index([status, branchId], name: "idx_beds_status_branch")
+  @@map("ward_beds")
+}
+
+model Admission {
+  id                 String    @id @default(uuid())
+  patientId          String    @map("patient_id")
+  bedId              String    @map("bed_id")
+  doctorId           String    @map("doctor_id")
+  branchId           String    @map("branch_id")
+  admissionDate      DateTime  @map("admission_date")
+  dischargeDate      DateTime? @map("discharge_date")
+  admissionDiagnosis String    @map("admission_diagnosis")
+  dischargeSummary   String?   @map("discharge_summary")
+  status             String    @default("Admitted")
+
+  // Relations
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  bed          WardBed       @relation(fields: [bedId], references: [id])
+  doctor       User          @relation("AdmittingDoctor", fields: [doctorId], references: [id])
+  branch       Branch        @relation(fields: [branchId], references: [id])
+  nursingNotes NursingNote[]
+
+  @@index([patientId], name: "idx_admissions_patient")
+  @@index([status], name: "idx_admissions_status")
+  @@map("admissions")
+}
+
+// ==========================================
+// 10. NURSING CARE & CHARTING
+// ==========================================
+
+model NursingNote {
+  id           String   @id
+  admissionId  String?  @map("admission_id")
+  patientId    String   @map("patient_id")
+  bedId        String   @map("bed_id")
+  nurseId      String   @map("nurse_id")
+  noteType     String   @default("Routine") @map("note_type")
+  vitalsBp     String?  @map("vitals_bp")
+  vitalsPulse  String?  @map("vitals_pulse")
+  vitalsTemp   String?  @map("vitals_temp")
+  vitalsSpo2   String?  @map("vitals_spo2")
+  clinicalNote String   @map("clinical_note")
+  recordedAt   DateTime @map("recorded_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  admission   Admission? @relation(fields: [admissionId], references: [id], onDelete: SetNull)
+  patient     Patient    @relation(fields: [patientId], references: [id])
+  bed         WardBed    @relation(fields: [bedId], references: [id])
+  nurseUser   User       @relation(fields: [nurseId], references: [id])
+
+  @@index([patientId], name: "idx_nursing_patient")
+  @@index([recordedAt(sort: Desc)], name: "idx_nursing_recorded")
+  @@map("nursing_notes")
+}
+
+// ==========================================
+// 11. INVENTORY & SUPPLY CHAIN
+// ==========================================
+
+model StockItem {
+  id           String   @id
+  name         String
+  category     String
+  branchId     String   @map("branch_id")
+  unit         String
+  quantity     Int      @default(0)
+  reorderLevel Int      @default(100) @map("reorder_level")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  branch            Branch             @relation(fields: [branchId], references: [id])
+  batches           StockBatch[]
+  transactions      StockTransaction[]
+  prescriptionItems PrescriptionItem[]
+
+  @@index([branchId, category], name: "idx_stock_branch_category")
+  @@index([name], name: "idx_stock_name")
+  @@map("stock_items")
+}
+
+model StockBatch {
+  id           String   @id @default(uuid())
+  stockItemId  String   @map("stock_item_id")
+  batchNumber  String   @map("batch_number")
+  supplierId   String?  @map("supplier_id")
+  quantity     Int
+  expiryDate   DateTime @map("expiry_date") @db.Date
+  dateReceived DateTime @map("date_received") @db.Date
+
+  // Relations
+  stockItem StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  supplier  Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@index([expiryDate(sort: Asc)], name: "idx_batches_expiry")
+  @@index([stockItemId], name: "idx_batches_item")
+  @@map("stock_batches")
+}
+
+model StockTransaction {
+  id              String   @id @default(uuid())
+  stockItemId     String   @map("stock_item_id")
+  branchId        String   @map("branch_id")
+  transactionType String   @map("transaction_type")
+  quantityDelta   Int      @map("quantity_delta")
+  balanceAfter    Int      @map("balance_after")
+  referenceId     String?  @map("reference_id")
+  userId          String   @map("user_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  stockItem StockItem @relation(fields: [stockItemId], references: [id])
+  branch    Branch    @relation(fields: [branchId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@map("stock_transactions")
+}
+
+// ==========================================
+// 12. SUPPLIERS & PROCUREMENT
+// ==========================================
+
+model Supplier {
+  id            String    @id
+  name          String
+  contactPerson String    @map("contact_person")
+  phone         String
+  email         String
+  address       String
+  supplierType  String    @map("supplier_type")
+  paymentTerms  String    @map("payment_terms")
+  rating        Decimal   @default(4.0) @db.Decimal(2, 1)
+  branchId      String?   @map("branch_id")
+  active        Boolean   @default(true)
+  lastOrderDate DateTime? @map("last_order_date") @db.Date
+
+  // Relations
+  branch       Branch?      @relation(fields: [branchId], references: [id], onDelete: SetNull)
+  stockBatches StockBatch[]
+
+  @@map("suppliers")
+}
+
+// ==========================================
+// 13. HERBAL MANUFACTURING & PRODUCTION
+// ==========================================
+
+model ProductionBatch {
+  id              String    @id
+  productName     String    @map("product_name")
+  batchNumber     String    @unique @map("batch_number")
+  stage           String
+  startDate       DateTime  @map("start_date") @db.Date
+  completionDate  DateTime? @map("completion_date") @db.Date
+  expiryDate      DateTime? @map("expiry_date") @db.Date
+  plannedQuantity Int       @map("planned_quantity")
+  qcApproverId    String?   @map("qc_approver_id")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  qcApproverUser User? @relation("QCApproverDoctor", fields: [qcApproverId], references: [id], onDelete: SetNull)
+
+  @@index([stage], name: "idx_prod_stage")
+  @@index([batchNumber], name: "idx_prod_batch_no")
+  @@map("production_batches")
+}
+
+// ==========================================
+// 14. BILLING & PAYMENTS
+// ==========================================
+
+model Invoice {
+  id             String   @id
+  patientId      String   @map("patient_id")
+  consultationId String?  @map("consultation_id")
+  branchId       String   @map("branch_id")
+  visitDate      DateTime @map("visit_date") @db.Date
+  totalAmount    Decimal  @map("total_amount") @db.Decimal(12, 2)
+  paidAmount     Decimal  @default(0.00) @map("paid_amount") @db.Decimal(12, 2)
+  status         String   @default("Unpaid")
+  paymentMethod  String?  @map("payment_method")
+  billedBy       String   @map("billed_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  patient      Patient           @relation(fields: [patientId], references: [id])
+  consultation Consultation?     @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  branch       Branch            @relation(fields: [branchId], references: [id])
+  billedByUser User              @relation("BilledByStaff", fields: [billedBy], references: [id])
+  lineItems    InvoiceLineItem[]
+  payments     Payment[]
+
+  @@index([patientId], name: "idx_invoices_patient")
+  @@index([status], name: "idx_invoices_status")
+  @@index([branchId, visitDate], name: "idx_invoices_branch_date")
+  @@map("invoices")
+}
+
+model InvoiceLineItem {
+  id          String  @id @default(uuid())
+  invoiceId   String  @map("invoice_id")
+  itemType    String  @map("item_type")
+  referenceId String? @map("reference_id")
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(10, 2)
+  lineTotal   Decimal @map("line_total") @db.Decimal(10, 2)
+
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_line_items")
+}
+
+model Payment {
+  id                   String   @id
+  invoiceId            String   @map("invoice_id")
+  patientId            String   @map("patient_id")
+  branchId             String   @map("branch_id")
+  amountPaid           Decimal  @map("amount_paid") @db.Decimal(10, 2)
+  paymentMethod        String   @map("payment_method")
+  transactionReference String?  @map("transaction_reference")
+  receivedBy           String   @map("received_by")
+  paymentDate          DateTime @default(now()) @map("payment_date")
+
+  // Relations
+  invoice        Invoice @relation(fields: [invoiceId], references: [id])
+  patient        Patient @relation(fields: [patientId], references: [id])
+  branch         Branch  @relation(fields: [branchId], references: [id])
+  receivedByUser User    @relation("ReceivedByCashier", fields: [receivedBy], references: [id])
+
+  @@map("payments")
+}
+
+// ==========================================
+// 15. ACCOUNTING & PAYROLL
+// ==========================================
+
+model Expense {
+  id            String   @id
+  description   String
+  category      String
+  amount        Decimal  @db.Decimal(12, 2)
+  expenseDate   DateTime @map("expense_date") @db.Date
+  approvedBy    String   @map("approved_by")
+  branchId      String?  @map("branch_id")
+  paymentMethod String   @map("payment_method")
+  receiptUrl    String?  @map("receipt_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  approvedByUser User    @relation("ApprovedByOfficer", fields: [approvedBy], references: [id])
+  branch         Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@index([branchId, expenseDate], name: "idx_expenses_branch_date")
+  @@index([category], name: "idx_expenses_category")
+  @@map("expenses")
+}
+
+model PayrollRecord {
+  id            String    @id @default(uuid())
+  staffId       String    @map("staff_id")
+  branchId      String    @map("branch_id")
+  payrollMonth  String    @map("payroll_month")
+  basicSalary   Decimal   @map("basic_salary") @db.Decimal(10, 2)
+  allowances    Decimal   @default(0.00) @db.Decimal(10, 2)
+  deductions    Decimal   @default(0.00) @db.Decimal(10, 2)
+  netSalary     Decimal   @map("net_salary") @db.Decimal(10, 2)
+  status        String    @default("Pending")
+  processedBy   String    @map("processed_by")
+  paidAt        DateTime? @map("paid_at")
+
+  // Relations
+  staffUser       User   @relation("StaffPayroll", fields: [staffId], references: [id])
+  branch          Branch @relation(fields: [branchId], references: [id])
+  processedByUser User   @relation("ProcessedByAccountant", fields: [processedBy], references: [id])
+
+  @@unique([staffId, payrollMonth])
+  @@map("payroll_records")
+}
+
+// ==========================================
+// 16. HUMAN RESOURCES & ROSTERING
+// ==========================================
+
+model LeaveRequest {
+  id         String   @id
+  staffId    String   @map("staff_id")
+  branchId   String   @map("branch_id")
+  leaveType  String   @map("leave_type")
+  fromDate   DateTime @map("from_date") @db.Date
+  toDate     DateTime @map("to_date") @db.Date
+  days       Int
+  reason     String
+  status     String   @default("Pending")
+  approvedBy String?  @map("approved_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  staffUser      User   @relation("StaffLeave", fields: [staffId], references: [id])
+  branch         Branch @relation(fields: [branchId], references: [id])
+  approvedByUser User?  @relation("ApprovedBySupervisor", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([staffId], name: "idx_leave_staff")
+  @@index([status], name: "idx_leave_status")
+  @@map("leave_requests")
+}
+
+model OffDutyRequest {
+  id           String   @id
+  staffId      String   @map("staff_id")
+  departmentId String   @map("department_id")
+  branchId     String   @map("branch_id")
+  requestDate  DateTime @map("request_date") @db.Date
+  shiftType    String   @map("shift_type")
+  reason       String
+  status       String   @default("Pending")
+  approvedBy   String?  @map("approved_by")
+  submittedAt  DateTime @default(now()) @map("submitted_at")
+
+  // Relations
+  staffUser      User       @relation("StaffOffDuty", fields: [staffId], references: [id])
+  department     Department @relation(fields: [departmentId], references: [id])
+  branch         Branch     @relation(fields: [branchId], references: [id])
+  approvedByUser User?      @relation("ApprovedOffDutySupervisor", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@map("off_duty_requests")
+}
+
+// ==========================================
+// 17. CALL CENTRE & CRM
+// ==========================================
+
+model CallLog {
+  id           String    @id
+  patientId    String?   @map("patient_id")
+  patientName  String    @map("patient_name")
+  agentId      String    @map("agent_id")
+  branchId     String    @map("branch_id")
+  reason       String
+  notes        String
+  outcome      String
+  followUpDate DateTime? @map("follow_up_date") @db.Date
+  callDate     DateTime  @default(now()) @map("call_date")
+
+  // Relations
+  patient   Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  agentUser User     @relation(fields: [agentId], references: [id])
+  branch    Branch   @relation(fields: [branchId], references: [id])
+
+  @@index([patientId], name: "idx_call_patient")
+  @@index([agentId], name: "idx_call_agent")
+  @@map("call_logs")
+}
+
+model PatientFollowUp {
+  id            String    @id
+  patientId     String    @map("patient_id")
+  doctorId      String    @map("doctor_id")
+  branchId      String    @map("branch_id")
+  condition     String
+  dueDate       DateTime  @map("due_date") @db.Date
+  lastVisit     DateTime  @map("last_visit") @db.Date
+  status        String    @default("Due")
+  effectiveness String?
+  notes         String?
+  nextDate      DateTime? @map("next_date") @db.Date
+
+  // Relations
+  patient    Patient @relation(fields: [patientId], references: [id])
+  doctorUser User    @relation(fields: [doctorId], references: [id])
+  branch     Branch  @relation(fields: [branchId], references: [id])
+
+  @@index([dueDate, status], name: "idx_followup_due")
+  @@map("patient_follow_ups")
+}
+
+// ==========================================
+// 18. MEETINGS & SCHEDULING
+// ==========================================
+
+model Meeting {
+  id             String   @id
+  title          String
+  type           String
+  scope          String
+  targetBranchId String?  @map("target_branch_id")
+  organizerId    String   @map("organizer_id")
+  meetingDate    DateTime @map("meeting_date") @db.Date
+  meetingTime    String   @map("meeting_time")
+  duration       String
+  location       String
+  agenda         String
+  status         String   @default("Upcoming")
+  minutes        String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  targetBranch  Branch? @relation("MeetingTargetBranch", fields: [targetBranchId], references: [id], onDelete: SetNull)
+  organizerUser User    @relation(fields: [organizerId], references: [id])
+
+  @@map("meetings")
+}
+
+// ==========================================
+// 19. REAL-TIME STAFF CHAT
+// ==========================================
+
+model ChatChannel {
+  id          String   @id
+  name        String
+  description String?
+  icon        String?
+  isDm        Boolean  @default(false) @map("is_dm")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  messages ChatMessage[]
+
+  @@map("chat_channels")
+}
+
+model ChatMessage {
+  id            String   @id
+  channelId     String   @map("channel_id")
+  senderId      String   @map("sender_id")
+  messageType   String   @default("text") @map("message_type")
+  content       String
+  attachmentUrl String?  @map("attachment_url")
+  fileName      String?  @map("file_name")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  channel    ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  senderUser User        @relation(fields: [senderId], references: [id])
+
+  @@index([channelId, createdAt(sort: Asc)], name: "idx_chat_channel_created")
+  @@map("chat_messages")
+}
+
+// ==========================================
+// 20. TELEMEDICINE & VIRTUAL CONSULTATIONS
+// ==========================================
+
+model TelemedicineSession {
+  id             String   @id
+  patientId      String   @map("patient_id")
+  doctorId       String   @map("doctor_id")
+  branchId       String   @map("branch_id")
+  scheduledAt    DateTime @map("scheduled_at")
+  duration       Int      @default(30)
+  sessionType    String   @default("Video") @map("session_type")
+  status         String   @default("Scheduled")
+  chiefComplaint String   @map("chief_complaint")
+  notes          String?
+  meetingLink    String?  @map("meeting_link")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  patient    Patient @relation(fields: [patientId], references: [id])
+  doctorUser User    @relation("DoctorTelemed", fields: [doctorId], references: [id])
+  branch     Branch  @relation(fields: [branchId], references: [id])
+
+  @@index([doctorId, scheduledAt], name: "idx_telemed_doctor_date")
+  @@index([patientId], name: "idx_telemed_patient")
+  @@map("telemedicine_sessions")
+}
+
+// ==========================================
+// 21. DAILY DEPARTMENTAL REPORTS
+// ==========================================
+
+model DailyReport {
+  id              String   @id
+  staffId         String   @map("staff_id")
+  departmentId    String   @map("department_id")
+  branchId        String   @map("branch_id")
+  reportDate      DateTime @map("report_date") @db.Date
+  activities      String
+  patientsHandled Int      @default(0) @map("patients_handled")
+  challenges      String?
+  recommendations String?
+  status          String   @default("Submitted")
+  reviewedBy      String?  @map("reviewed_by")
+  reviewNotes     String?  @map("review_notes")
+  submittedAt     DateTime @default(now()) @map("submitted_at")
+
+  // Relations
+  staffUser      User       @relation("StaffDailyReport", fields: [staffId], references: [id])
+  department     Department @relation(fields: [departmentId], references: [id])
+  branch         Branch     @relation(fields: [branchId], references: [id])
+  reviewedByUser User?      @relation("ReviewedDailyReport", fields: [reviewedBy], references: [id], onDelete: SetNull)
+
+  @@unique([staffId, reportDate])
+  @@index([reportDate, branchId], name: "idx_daily_reports_date_branch")
+  @@map("daily_reports")
+}
+
+// ==========================================
+// 22. AI ASSISTANT & SESSIONS
+// ==========================================
+
+model AiChatSession {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  sessionTitle String   @default("AI Assistant Query") @map("session_title")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages AiChatMessage[]
+
+  @@map("ai_chat_sessions")
+}
+
+model AiChatMessage {
+  id        String   @id @default(uuid())
+  sessionId String   @map("session_id")
+  role      String
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  session AiChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("ai_chat_messages")
+}
+
+// ==========================================
+// 23. SMS & NOTIFICATIONS LOG
+// ==========================================
+
+model SmsNotificationLog {
+  id                String   @id @default(uuid())
+  patientId         String?  @map("patient_id")
+  recipientPhone    String   @map("recipient_phone")
+  messageBody       String   @map("message_body")
+  purpose           String
+  gatewayResponseId String?  @map("gateway_response_id")
+  deliveryStatus    String   @default("Sent") @map("delivery_status")
+  sentBy            String?  @map("sent_by")
+  sentAt            DateTime @default(now()) @map("sent_at")
+
+  // Relations
+  patient    Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  sentByUser User?    @relation(fields: [sentBy], references: [id], onDelete: SetNull)
+
+  @@index([patientId], name: "idx_sms_patient")
+  @@index([sentAt(sort: Desc)], name: "idx_sms_sent_at")
+  @@map("sms_notifications_log")
+}
+
+model InternalAnnouncement {
+  id         String    @id @default(uuid())
+  title      String
+  content    String
+  priority   String    @default("Medium")
+  targetRole String?   @map("target_role")
+  branchId   String?   @map("branch_id")
+  expiresAt  DateTime? @map("expires_at")
+  createdBy  String    @map("created_by")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  createdByUser User    @relation("CreatedAnnouncements", fields: [createdBy], references: [id])
+  branch        Branch? @relation(fields: [branchId], references: [id], onDelete: SetNull)
+
+  @@map("internal_announcements")
+}

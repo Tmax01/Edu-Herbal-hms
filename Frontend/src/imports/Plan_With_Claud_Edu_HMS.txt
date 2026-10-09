@@ -1,0 +1,157 @@
+ 
+
+ 0. Global Shell (present on every screen after login)
+
+- **Login screen** — single shared URL for both branches; email/username + password; "Forgot password" link
+- **Top/side navigation** — module icons scoped to the logged-in user's role (a Pharmacist doesn't see Admission; a Receptionist doesn't see Production)
+- **Branch indicator + switcher** — shows current branch context (e.g., "Accra"); Admin/Manager roles can switch to "All Branches" or the other branch; other roles are locked to their home branch
+- **Global patient search bar** — searchable by name, MRN, or phone from anywhere in the app, returns the patient profile regardless of which branch registered them
+- **Notification bell** — low-stock alerts, follow-ups due, pending lab results, etc., role-filtered
+
+---
+
+ 1. Patient Registration
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Patient Search/List** | Front desk landing screen | Search bar, recent patients list, "+ New Patient" button | New Registration Form, Patient Profile |
+| **New Registration Form** | Capture a new patient | Name, DOB, gender, contact, address, emergency contact, blood group, allergies, NHIS ID, photo capture/upload; duplicate-check warning if a close match exists | Patient Profile (after save) or Book Appointment |
+| **Patient Profile** | Single view of everything about a patient | Header (photo, MRN, branch registered), tabs: Visit History / Admissions / Invoices / Follow-ups / Call Log; "Print ID Card" button | Consultation, Book Appointment, Billing |
+
+---
+
+ 2. Appointment Scheduling
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Doctor/Consultant Calendar** | Slot-based availability view | Provider selector, date picker, available/booked slots | Book Appointment Form |
+| **Book Appointment Form** | Create/reschedule a booking | Patient (linked from profile or searched), provider, department, date/time, notes | Confirmation, back to Patient Profile |
+| **Daily Queue View** | Front desk & clinical staff's working screen | List of today's appointments per provider/department with status chips (Scheduled/Checked-in/In Progress/Completed/No-show); check-in button | Consultation screen (on check-in) |
+
+---
+
+ 3–4. Consultation (EMR + Herbal)
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Active Visit Screen** | Doctor/consultant's main working screen | Patient summary panel (allergies flagged prominently), tabs: Conventional Notes / Herbal Notes, vitals entry, past-visit timeline sidebar | Prescription, Lab Order, Herbal Formulation |
+| **Conventional Consultation Form** | Standard EMR entry | Chief complaint, diagnosis, vitals, notes, attach reports/scans | Prescription Form, Lab Order Form |
+| **Herbal Consultation Form** | Herbal-specific entry | Herbal diagnosis notes, formulation picker, dosage/duration, lifestyle recommendations, contraindication warnings (auto-flagged from patient allergies) | Herbal Prescription (feeds Pharmacy) |
+| **Prescription Form** | Create prescription (either type) | Product search (drug or herbal catalog), dosage, frequency, duration | Sends to Pharmacy queue |
+| **Lab Order Form** | Request test(s) | Test type multi-select, notes | Sends to Lab queue |
+
+---
+
+ 5. Pharmacy & Herbal Dispensing
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Incoming Prescriptions Queue** | Pharmacist's landing screen | List of pending prescriptions (patient, items, ordering provider), branch-scoped | Dispense Screen |
+| **Dispense Screen** | Fulfill a prescription | Item list with batch/expiry auto-selected (FEFO), quantity, "Confirm Dispense" (auto-deducts branch stock) | Invoice line-item creation |
+| **Stock Overview** | Branch-level inventory | Product list with stock level, reorder threshold flag, batch/expiry columns | Stock Transfer Request (if low) |
+
+---
+
+ 6. Laboratory
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Pending Lab Orders** | Lab tech's landing screen | List of orders (patient, test type, ordering provider, status) | Result Entry Screen |
+| **Result Entry Screen** | Enter/upload results | Result fields or file upload, "Submit for Approval" | Approval step, visible to ordering provider |
+| **Result History** | Per-patient lab history | Chronological list, printable report | — |
+
+---
+
+7. Billing & Accounts
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Invoice Builder** | Compiles charges for a visit/admission | Auto-pulled line items (consultation, lab, pharmacy, admission), manual add-line option, total | Payment Screen |
+| **Payment Screen** | Record payment | Method selector (Cash/Mobile Money/Bank Transfer/POS), amount, Paid/Partial/Unpaid status | Printable Receipt |
+| **Outstanding Balances List** | Accounts team's follow-up view | Filterable by branch, patient, age of balance | Payment Screen |
+
+---
+
+8. Call Centre & CRM
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Call Log Entry** | Log a call in real time | Patient lookup/link (or "new lead" flag), reason category, notes, action taken, follow-up date, outcome dropdown | Follow-up creation, Appointment booking |
+| **Call History / My Calls** | Agent's worklist | List of past and pending-follow-up calls, filter by outcome/status | Call Log Entry (edit) |
+| **Complaint Tracker** | Complaints specifically | Status (open/in progress/resolved), assigned officer, resolution notes | — |
+
+---
+
+9. Patient Review & Follow-up
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Follow-up Due List** | Consultant's and Call Centre's shared worklist | Patients due for review this week, overdue flags | Follow-up Review Form |
+| **Follow-up Review Form** | Record a review | Progress notes, side effects, effectiveness rating, next review date | Updates Patient Profile timeline |
+
+---
+
+## 10. Admission & Ward Management
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Ward Occupancy Board** | Real-time bed view | Grid of wards/beds, color-coded occupied/free, per branch | Admit Patient Form |
+| **Admit Patient Form** | Start an admission | Link to visit, ward + bed selection, admitting notes | Nursing Notes screen |
+| **Nursing Notes / Daily Chart** | Ongoing inpatient record | Timestamped notes entry, vitals over time | Discharge Form |
+| **Discharge Form** | Close an admission | Discharge summary, discharge date | Auto-adds admission charges to Billing |
+
+---
+
+11. Production Management
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Raw Material Intake** | Log materials received | Supplier, material, quantity, date | Feeds Inventory |
+| **Production Batch Form** | Open a new batch | Product, batch number, raw materials used (pulled from stock), processing stage tracker | QC Sign-off |
+| **QC Sign-off Screen** | Approve/reject a batch | Checklist, approver, notes | Packaging Record |
+| **Packaging/Bottling Record** | Finalize batch | Packaging details, final quantity, expiry date | Finished stock → central inventory |
+| **Batch Traceability View** | Lookup tool | Search by batch number → shows raw materials, QC approver, distribution history | — |
+
+---
+
+12. Inventory & Stores
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Central Stock Overview** | Store officer's landing screen | Raw materials + finished goods, reorder alerts | Stock Transfer Form |
+| **Stock Transfer Form** | Dispatch stock to a branch | Product, quantity, destination branch, dispatch confirmation | Branch-side "Receive Transfer" action |
+| **Supplier Directory** | Manage suppliers | List/edit supplier contact + items supplied | — |
+
+---
+
+13. Management Dashboard & Reporting
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **Dashboard Home** | Landing screen for Admin/Manager | Branch filter (All/Mankessim/Accra) toggle at top; cards: patients today, revenue, ward occupancy, low stock, call stats, pending lab | Drill into any report |
+| **Report Builder** | Generate a specific report | Report type selector, date range, branch filter, export (PDF/CSV) | — |
+
+---
+
+14. Security & User Access
+
+| Screen | Purpose | Key Elements | Leads To |
+|---|---|---|---|
+| **User Management** | Admin-only | List of staff accounts, role assignment, branch assignment, active/inactive toggle | Add/Edit User Form |
+| **Audit Log Viewer** | Admin-only | Filterable log of who edited/viewed what and when | — |
+
+---
+
+Suggested Wireframing Order
+
+Build low-fidelity wireframes in this order, since each stage unblocks testing of the next:
+1. Global shell + login + branch switcher
+2. Patient Registration + Patient Profile (everything else links from here)
+3. Appointment Scheduling + Daily Queue
+4. Consultation (EMR + Herbal) + Prescription/Lab Order forms
+5. Pharmacy Dispense + Lab Result Entry
+6. Billing/Invoice/Payment
+7. Admission/Ward
+8. Call Centre + Follow-up
+9. Production + Inventory + Stock Transfer
+10. Dashboard/Reporting + User Management/Audit Log
