@@ -20,8 +20,10 @@ services:
     container_name: eduhms-backend-api
     restart: always
     env_file:
-      - .env.production
+      - path: .env.production
+        required: false
     environment:
+
       NODE_ENV: production
       PORT: 4000
     ports:
